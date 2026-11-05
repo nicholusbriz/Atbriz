@@ -1,0 +1,227 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+}
+
+/* ── Design tokens ── */
+:root {
+  --bg: #FFFFFF;
+  --bg-2: #F9F9F9;
+  --surface: #F1F1F1;
+  --surface-2: #E5E5E5;
+  --surface-3: #D9D9D9;
+
+  /* Uganda-inspired sophisticated palette */
+  --gold: #D4A84B;
+  --terracotta: #C77D63;
+  --forest: #2D5A3D;
+  --cream: #F5F0E8;
+  --crimson: #B8484A;
+
+  --t1: #0F0F0F;
+  --t2: #606060;
+  --t3: #909090;
+
+  --border: rgba(0, 0, 0, 0.08);
+  --border-2: rgba(0, 0, 0, 0.12);
+  --border-3: rgba(0, 0, 0, 0.18);
+
+  --nav-h: 60px;
+  /* bottom bar height */
+  --topbar: 56px;
+  /* top logo bar */
+
+  --r1: 6px;
+  --r2: 10px;
+  --r3: 14px;
+  --r4: 18px;
+  --rf: 9999px;
+}
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-3);
+}
+
+/* ── Focus ── */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Selection ── */
+::selection {
+  background: rgba(212, 168, 75, 0.25);
+  color: #080808;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  border-radius: var(--rf);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 180ms cubic-bezier(0.2, 0, 0.2, 1);
+  padding: 10px 22px;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: #080808;
+}
+
+.btn-gold:hover {
+  background: #E4B865;
+}
+
+.btn-terracotta {
+  background: var(--terracotta);
+  color: #FAFAFA;
+}
+
+.btn-terracotta:hover {
+  background: #D78D75;
+}
+
+.btn-ghost {
+  background: var(--surface);
+  color: var(--t1);
+  border: 1px solid var(--border-2);
+}
+
+.btn-ghost:hover {
+  color: var(--t1);
+  border-color: var(--border-3);
+  background: var(--surface-2);
+}
+
+.btn-sm {
+  font-size: 12px;
+  padding: 8px 16px;
+}
+
+.btn-lg {
+  font-size: 14px;
+  padding: 12px 26px;
+}
+
+/* ── Chips / badges ── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--rf);
+}
+
+.chip-gold {
+  background: rgba(212, 168, 75, 0.12);
+  color: var(--gold);
+  border: 1px solid rgba(212, 168, 75, 0.2);
+}
+
+.chip-terracotta {
+  background: rgba(199, 125, 99, 0.14);
+  color: var(--terracotta);
+  border: 1px solid rgba(199, 125, 99, 0.25);
+}
+
+.chip-forest {
+  background: rgba(45, 90, 61, 0.15);
+  color: var(--forest);
+  border: 1px solid rgba(45, 90, 61, 0.3);
+}
+
+/* ── Section label ── */
+.sec-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+
+/* ── Inner page wrapper ── */
+.inner {
+  padding: 0 clamp(14px, 3vw, 32px);
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ── Desktop adjustments ── */
+@media (min-width: 768px) {
+  /* Expand search dropdown on desktop */
+  .search-input {
+    width: 320px !important;
+  }
+}

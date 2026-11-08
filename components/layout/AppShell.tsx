@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import Image from 'next/image';
 import {
   Home, MapPin, BarChart2, Bell, BookOpen, AlertCircle,
-  Search, X, ShieldCheck, DatabaseZap, ChevronDown, FileText,
+  Search, X, ShieldCheck, DatabaseZap, ChevronDown, FileText, UserPlus, Layers, Users, ScrollText, LayoutDashboard,
 } from 'lucide-react';
 
 import HomeSection from '@/components/sections/HomeSection';
@@ -13,8 +13,15 @@ import DistrictsSection from '@/components/sections/DistrictsSection';
 import UpdatesSection from '@/components/sections/UpdatesSection';
 import StoriesSection from '@/components/sections/StoriesSection';
 import SubmitSection from '@/components/sections/SubmitSection';
+import AuthSection from '@/components/sections/AuthSection';
+import { useAuth } from '@/lib/auth-client';
 import SyncSection from '@/components/admin/SyncSection';
 import AdminReportsSection from '@/components/admin/ReportsSection';
+import UsersSection from '@/components/admin/role/UsersSection';
+import LogsSection from '@/components/admin/LogsSection';
+import DashboardSection from '@/components/sections/DashboardSection';
+import PagesSection from '@/components/admin/role/PagesSection';
+import { GATED_SECTIONS, SECTION_ACCESS, type GatedSectionId } from '@/lib/access-map';
 
 // ─── Bottom nav (public sections only) ───────────────────────────────────────
 const NAV = [
@@ -26,19 +33,24 @@ const NAV = [
   { id: 'submit', label: 'Report', Icon: AlertCircle, hash: 'report' },
 ] as const;
 
-// ─── Admin dropdown items ─────────────────────────────────────────────────────
-const ADMIN_ITEMS = [
-  { id: 'admin-reports', label: 'Reports', Icon: FileText, hash: 'admin-reports' },
-  { id: 'sync', label: 'Locations Sync', Icon: DatabaseZap, hash: 'sync' },
-] as const;
+// ─── Gated section icons (which sections exist is driven by lib/sections.ts) ──
+const ADMIN_ICONS: Record<GatedSectionId, typeof FileText> = {
+  'admin-reports': FileText,
+  sync: DatabaseZap,
+  roles: Layers,
+  users: Users,
+  logs: ScrollText,
+  dashboard: LayoutDashboard,
+};
 
 type PublicSectionId = (typeof NAV)[number]['id'];
-type AdminSectionId = (typeof ADMIN_ITEMS)[number]['id'];
-type SectionId = PublicSectionId | AdminSectionId;
+type AdminSectionId = GatedSectionId;
+type SectionId = PublicSectionId | AdminSectionId | 'register';
 
-const ALL_HASHES = [
+const ALL_HASHES: { id: SectionId; hash: string }[] = [
   ...NAV.map((n) => ({ id: n.id as SectionId, hash: n.hash })),
-  ...ADMIN_ITEMS.map((a) => ({ id: a.id as SectionId, hash: a.hash })),
+  ...GATED_SECTIONS.map((s) => ({ id: s.id as SectionId, hash: s.hash })),
+  { id: 'register' as SectionId, hash: 'register' },
 ];
 
 function hashToSection(hash: string): SectionId {
@@ -47,7 +59,7 @@ function hashToSection(hash: string): SectionId {
 }
 
 function isAdminSection(id: SectionId): id is AdminSectionId {
-  return ADMIN_ITEMS.some((a) => a.id === id);
+  return GATED_SECTIONS.some((s) => s.id === id);
 }
 
 function subscribeToLocationHash(onChange: () => void) {
@@ -73,6 +85,14 @@ export default function AppShell() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user, status: authStatus } = useAuth();
+
+  // Section access is hardcoded per role in lib/access-map.ts (SECTION_ACCESS)
+  const roleName = user?.role ?? '';
+  const canOpen = (id: string) => roleName === 'dev' || (SECTION_ACCESS[roleName] ?? []).includes(id);
+  const allowedPages = new Set(GATED_SECTIONS.filter((s) => canOpen(s.id)).map((s) => s.id));
+  const accessLoading = authStatus === 'loading';
+  const hasGatedAccess = allowedPages.size > 0;
 
   const searchRef = useRef<HTMLDivElement>(null);
   const adminRef = useRef<HTMLDivElement>(null);
@@ -105,6 +125,22 @@ export default function AppShell() {
   }
 
   function renderSection() {
+    // ── Protected sections: gated by the role's allowed pages ──
+    if (isAdminSection(active)) {
+      const checking = accessLoading;
+      if (checking) {
+        return (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t3)', fontSize: 13 }}>
+            Checking access…
+          </div>
+        );
+      }
+      if (!allowedPages.has(active)) {
+        // Role not allowed → show the auth section instead
+        return <AuthSection />;
+      }
+    }
+
     switch (active) {
       case 'home': return <HomeSection onNav={(id) => navigate(id as SectionId)} />;
       case 'reports': return <ReportsSection />;
@@ -112,9 +148,14 @@ export default function AppShell() {
       case 'updates': return <UpdatesSection />;
       case 'stories': return <StoriesSection />;
       case 'submit': return <SubmitSection />;
+      case 'register': return <AuthSection />;
       // ── admin sections ──
       case 'sync': return <SyncSection />;
       case 'admin-reports': return <AdminReportsSection />;
+      case 'roles': return <PagesSection />;
+      case 'users': return <UsersSection />;
+      case 'logs': return <LogsSection />;
+      case 'dashboard': return <DashboardSection />;
     }
   }
 
@@ -220,6 +261,24 @@ export default function AppShell() {
           </button>
         </div>
 
+        {/* Follow up / account CTA */}
+        <button
+          className="app-join-button"
+          onClick={() => navigate(user ? 'dashboard' : 'register')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            height: 36, padding: '0 14px',
+            background: 'var(--surface)', color: 'var(--t1)',
+            border: '1px solid var(--border)', borderRadius: 'var(--rf)',
+            fontSize: 12, fontWeight: 700,
+            cursor: 'pointer', flexShrink: 0,
+            transition: 'background 180ms, border-color 180ms',
+          }}
+        >
+          <FileText size={13} />
+          <span>My reports</span>
+        </button>
+
         {/* Report CTA */}
         <button
           className="app-report-button"
@@ -284,6 +343,7 @@ export default function AppShell() {
             </button>
           );
         })}
+        {hasGatedAccess && (
         <div ref={adminRef} style={{ position: 'relative', flex: 1, minWidth: 0 }}>
           <button
             type="button"
@@ -336,14 +396,15 @@ export default function AppShell() {
               }}>
                 Admin
               </p>
-              {ADMIN_ITEMS.map(({ id, label, Icon }) => {
-                const on = active === id;
+              {GATED_SECTIONS.filter((s) => allowedPages.has(s.id)).map((s) => {
+                const Icon = ADMIN_ICONS[s.id];
+                const on = active === s.id;
                 return (
                   <button
-                    key={id}
+                    key={s.id}
                     type="button"
                     role="menuitem"
-                    onClick={() => navigate(id)}
+                    onClick={() => navigate(s.id)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       width: '100%', padding: '10px 14px',
@@ -356,13 +417,14 @@ export default function AppShell() {
                     onMouseLeave={(event) => { if (!on) event.currentTarget.style.background = 'transparent'; }}
                   >
                     <Icon size={14} style={{ color: on ? 'var(--crimson)' : 'var(--t3)', flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, fontWeight: 600, color: on ? 'var(--crimson)' : 'var(--t1)' }}>{label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: on ? 'var(--crimson)' : 'var(--t1)' }}>{s.label}</span>
                   </button>
                 );
               })}
             </div>
           )}
         </div>
+        )}
         {NAV.slice(3).map(({ id, label }) => {
           const on = active === id;
           return (

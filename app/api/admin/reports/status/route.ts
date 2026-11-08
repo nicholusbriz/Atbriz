@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import { Types } from 'mongoose';
 import { connectDB } from '@/lib/mongoose';
-import { hasAdminApiAccess } from '@/lib/admin-api-auth';
+import { requireRouteAccess } from '@/lib/auth-guard';
 import Report, { type ReportStatus } from '@/models/Report';
 
 const reportStatuses: ReportStatus[] = ['pending', 'under_review', 'resolved', 'rejected'];
 
 export async function PATCH(request: Request) {
-  if (!hasAdminApiAccess(request)) {
-    return NextResponse.json({ error: 'Admin API key is missing or invalid' }, { status: 401 });
+  const user = await requireRouteAccess(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Reports manage permission required' }, { status: 401 });
   }
 
   let body: { id?: unknown; status?: unknown };
@@ -30,7 +31,7 @@ export async function PATCH(request: Request) {
     const report = await Report.findByIdAndUpdate(
       body.id,
       { $set: { status: body.status } },
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     )
       .select('_id status updatedAt')
       .lean();

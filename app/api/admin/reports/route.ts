@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server';
 import { Types } from 'mongoose';
 import { connectDB } from '@/lib/mongoose';
 import Report from '@/models/Report';
-import { hasAdminApiAccess } from '@/lib/admin-api-auth';
+import { requireRouteAccess, unauthorized } from '@/lib/auth-guard';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const user = await requireRouteAccess(request);
+  if (!user) return unauthorized('Reports access required');
+
   try {
     await connectDB();
     const reports = await Report.find()
@@ -22,8 +25,9 @@ export async function GET() {
 }
 
 export async function DELETE(req: Request) {
-  if (!hasAdminApiAccess(req)) {
-    return NextResponse.json({ error: 'Admin API key is missing or invalid' }, { status: 401 });
+  const user = await requireRouteAccess(req);
+  if (!user) {
+    return NextResponse.json({ error: 'Reports manage permission required' }, { status: 401 });
   }
 
   let body: { id?: unknown };

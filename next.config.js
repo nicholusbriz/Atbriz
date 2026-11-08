@@ -2,6 +2,7 @@
 const path = require("path");
 
 const nextConfig = {
+  output: 'standalone',
   turbopack: {
     root: path.resolve(__dirname),
     rules: {

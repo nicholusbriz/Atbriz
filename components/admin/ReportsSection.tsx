@@ -151,7 +151,7 @@ export default function ReportsSection() {
     setUpdatingId(report._id);
     setError('');
     try {
-      const response = await fetch('/api/admin/reports', {
+      const response = await fetch('/api/admin/reports/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: report._id, status: nextStatus }),
@@ -455,25 +455,34 @@ export default function ReportsSection() {
 
                     return (
                       <article key={report._id} style={{
-                        padding: '14px 16px',
+                        padding: '10px 16px',
                         background: 'var(--surface)',
                         border: '1px solid var(--border)',
                         borderRadius: 'var(--r2)',
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                          <div style={{ minWidth: 0 }}>
-                            <p style={{ margin: 0, color: 'var(--t1)', fontSize: 14, fontWeight: 800 }}>
-                              {report.title || report.referenceCode}
-                              {report.isDemo && (
-                                <span style={{ marginLeft: 8, color: 'var(--t3)', fontSize: 10, fontWeight: 700 }}>
-                                  Demo data
-                                </span>
-                              )}
-                            </p>
-                            <p style={{ margin: '5px 0 0', color: 'var(--t3)', fontSize: 11 }}>
-                              {report.referenceCode} · {report.category} · {new Date(report.createdAt).toLocaleString()}
-                            </p>
-                          </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                          <button
+                            type="button"
+                            aria-expanded={isExpanded}
+                            onClick={() => setExpandedReports((current) => {
+                              const next = new Set(current);
+                              if (next.has(report._id)) next.delete(report._id);
+                              else next.add(report._id);
+                              return next;
+                            })}
+                            style={{
+                              flex: 1, minWidth: 0, padding: 0, border: 0, background: 'transparent',
+                              textAlign: 'left', cursor: 'pointer', fontSize: 14, fontWeight: 800,
+                              color: 'var(--t1)',
+                            }}
+                          >
+                            {report.title || report.referenceCode}
+                            {report.isDemo && (
+                              <span style={{ marginLeft: 8, color: 'var(--t3)', fontSize: 10, fontWeight: 700 }}>
+                                Demo data
+                              </span>
+                            )}
+                          </button>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{
                               padding: '4px 9px',
@@ -567,49 +576,32 @@ export default function ReportsSection() {
                           </div>
                         </div>
 
-                        <p style={{
-                          margin: '12px 0 0',
-                          color: 'var(--t1)',
-                          fontSize: 13,
-                          lineHeight: 1.55,
-                          whiteSpace: 'pre-wrap',
-                          overflowWrap: 'anywhere',
-                          ...(!isExpanded ? {
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical' as const,
-                            WebkitLineClamp: 2,
-                            overflow: 'hidden',
-                          } : {}),
-                        }}>
-                          {report.description}
-                        </p>
-                        {report.description.length > 120 && (
-                          <button
-                            type="button"
-                            aria-expanded={isExpanded}
-                            onClick={() => setExpandedReports((current) => {
-                              const next = new Set(current);
-                              if (next.has(report._id)) next.delete(report._id);
-                              else next.add(report._id);
-                              return next;
-                            })}
-                            style={{
-                              margin: '5px 0 10px', padding: 0, border: 0, background: 'transparent',
-                              color: 'var(--crimson)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                            }}
-                          >
-                            {isExpanded ? 'View less' : 'View more'}
-                          </button>
+                        {isExpanded && (
+                          <>
+                            <p style={{ margin: '8px 0 0', color: 'var(--t3)', fontSize: 11 }}>
+                              {report.referenceCode} · {report.category} · {new Date(report.createdAt).toLocaleString()}
+                            </p>
+                            <p style={{
+                              margin: '10px 0 0',
+                              color: 'var(--t1)',
+                              fontSize: 13,
+                              lineHeight: 1.55,
+                              whiteSpace: 'pre-wrap',
+                              overflowWrap: 'anywhere',
+                            }}>
+                              {report.description}
+                            </p>
+                            {report.attachments && report.attachments.length > 0 && (
+                              <div style={{ marginTop: 10 }}>
+                                <ReportAttachmentGallery attachments={report.attachments} />
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', marginTop: 10, color: 'var(--t3)', fontSize: 11 }}>
+                              <span>Location: {location || 'Not specified'}</span>
+                              {report.email && <span>Email: {report.email}</span>}
+                            </div>
+                          </>
                         )}
-                        {report.attachments && report.attachments.length > 0 && (
-                          <div style={{ marginTop: 10 }}>
-                            <ReportAttachmentGallery attachments={report.attachments} />
-                          </div>
-                        )}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', color: 'var(--t3)', fontSize: 11 }}>
-                          <span>Location: {location || 'Not specified'}</span>
-                          {report.email && <span>Email: {report.email}</span>}
-                        </div>
                       </article>
                     );
                   })}

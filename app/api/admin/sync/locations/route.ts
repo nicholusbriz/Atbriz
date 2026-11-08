@@ -5,6 +5,7 @@ import District from '@/models/District';
 import Subcounty from '@/models/Subcounty';
 import Parish from '@/models/Parish';
 import Village from '@/models/Village';
+import { requireRouteAccess } from '@/lib/auth-guard';
 
 type LocationLevel = 'subcounty' | 'parish' | 'village';
 type VillageType = 'village' | 'cell';
@@ -22,6 +23,11 @@ function isObjectId(value: unknown): value is string {
 }
 
 export async function POST(req: NextRequest) {
+  const user = await requireRouteAccess(req);
+  if (!user) {
+    return NextResponse.json({ error: 'Sync manage permission required' }, { status: 401 });
+  }
+
   try {
     const body = await req.json() as {
       districtId?: unknown;
@@ -107,6 +113,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const user = await requireRouteAccess(req);
+  if (!user) {
+    return NextResponse.json({ error: 'Sync manage permission required' }, { status: 401 });
+  }
+
   try {
     const body = await req.json() as {
       districtId?: unknown;
@@ -177,6 +188,11 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const user = await requireRouteAccess(req);
+  if (!user) {
+    return NextResponse.json({ error: 'Sync manage permission required' }, { status: 401 });
+  }
+
   try {
     const body = await req.json() as {
       districtId?: unknown;

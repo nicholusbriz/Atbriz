@@ -13,55 +13,54 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://atbriz.com'),
+  metadataBase: new URL('https://voiceug.com'),
   title: {
-    default: 'atbriz — Connect with Uganda\'s Rising Artists & Discover New Music',
-    template: '%s | atbriz',
+    default: 'VoiceUG — Uganda Citizen Complaints & Feedback Platform',
+    template: '%s | VoiceUG',
   },
   description:
-    'atbriz is Uganda\'s premier artist platform where musicians create profiles, showcase their music, display management contacts, and connect with fans. Discover, stream, and promote Ugandan talent.',
+    'VoiceUG is Uganda\'s citizen feedback platform. Report health worker absence, broken roads, missing drugs, corrupt officials and more — directly to your district office.',
   keywords: [
-    'Ugandan music',
-    'Uganda artists',
-    'Afrobeats Uganda',
-    'upcoming Ugandan musicians',
-    'Ugandan music platform',
-    'artist discovery Uganda',
-    'music promotion Uganda',
-    'Kampala music scene',
-    'atbriz',
-    'Uganda artist profiles',
-    'music streaming Uganda',
-    'artist management contacts',
-    'Ugandan musicians',
+    'Uganda citizen complaints',
+    'report government Uganda',
+    'Uganda health worker absent',
+    'Uganda road repair',
+    'district complaints Uganda',
+    'civic tech Uganda',
+    'VoiceUG',
+    'Uganda accountability platform',
+    'report corruption Uganda',
+    'citizen feedback Uganda',
+    'Uganda government services',
+    'district officials Uganda',
   ],
-  authors: [{ name: 'atbriz' }],
-  creator: 'atbriz',
-  publisher: 'atbriz',
+  authors: [{ name: 'VoiceUG' }],
+  creator: 'VoiceUG',
+  publisher: 'VoiceUG',
   openGraph: {
     type: 'website',
     locale: 'en_UG',
-    url: 'https://atbriz.com',
-    siteName: 'atbriz',
-    title: "atbriz — Connect with Uganda's Rising Artists & Discover New Music",
+    url: 'https://voiceug.com',
+    siteName: 'VoiceUG',
+    title: "VoiceUG — Uganda's Citizen Complaints Platform",
     description:
-      "Create your artist profile, upload music, showcase management contacts, and connect with fans. Uganda's premier platform for musicians and music discovery.",
+      "Report. Track. Get it Fixed. Submit complaints about health, roads, education or corruption directly to the right district official.",
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'atbriz — Uganda\'s Artist Platform',
+        alt: 'VoiceUG — citizen reporting across Uganda',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: "atbriz — Connect with Uganda's Rising Artists & Discover New Music",
+    title: "VoiceUG — Uganda's Citizen Complaints Platform",
     description:
-      "Create your artist profile, upload music, showcase management contacts, and connect with fans. Uganda's premier platform for musicians.",
+      "Report health worker absence, broken roads, missing drugs and corruption directly to your district office.",
     images: ['/og-image.png'],
-    creator: '@atbriz',
+    creator: '@voiceug',
   },
   robots: {
     index: true,
@@ -83,10 +82,22 @@ export default function RootLayout({
 }) {
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'MusicEvent',
-    name: 'atbriz',
-    description: 'Uganda\'s premier artist platform where musicians create profiles, upload music, and connect with fans and industry professionals.',
-    url: 'https://atbriz.com',
+    '@type': 'WebApplication',
+    name: 'VoiceUG',
+    description: "Uganda's citizen complaints and government accountability platform.",
+    url: 'https://voiceug.com',
+    applicationCategory: 'GovernmentApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'UGX',
+    },
+    creator: {
+      '@type': 'Organization',
+      name: 'VoiceUG',
+      url: 'https://voiceug.com',
+    },
     location: {
       '@type': 'Place',
       name: 'Uganda',
@@ -94,11 +105,6 @@ export default function RootLayout({
         '@type': 'PostalAddress',
         addressCountry: 'UG',
       },
-    },
-    organizer: {
-      '@type': 'Organization',
-      name: 'atbriz',
-      url: 'https://atbriz.com',
     },
   };
 

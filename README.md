@@ -20,6 +20,22 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Azure Blob uploads
+
+Report attachments upload directly from the browser to a private Azure Blob container. The app server only issues a short-lived, single-blob SAS; never expose an account key or connection string to the browser or commit it to source control.
+
+Set these variables in the ignored `my-app/.env.local` file:
+
+```env
+AZURE_STORAGE_ACCOUNT_NAME=atbrizbolb
+AZURE_STORAGE_CONTAINER_NAME=your-container-name
+AZURE_STORAGE_ACCOUNT_KEY=your-storage-account-key
+```
+
+All three variables are required. The account key is used only on the server to verify uploads and sign short-lived SAS URLs; never expose it to browser code, commit it, or put it in a `NEXT_PUBLIC_` variable. Keep it in the ignored `.env.local` file locally and in your hosting provider's protected server-side environment settings in production. This app uses account-key authentication only and has no identity-based fallback.
+
+Configure Blob service CORS to allow the exact origins serving the app (for example `http://localhost:3000` and the production site), with `PUT` and `OPTIONS` methods. Do not make the container public.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

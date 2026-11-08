@@ -30,7 +30,7 @@
 
   --nav-h: 60px;
   /* bottom bar height */
-  --topbar: 56px;
+  --topbar: 64px;
   /* top logo bar */
 
   --r1: 6px;
@@ -207,6 +207,67 @@ body {
   padding: 0 clamp(14px, 3vw, 32px);
 }
 
+/* ── Report form ── */
+.report-page {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.report-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px 24px;
+  padding: clamp(18px, 3vw, 32px);
+  border: 1px solid var(--border);
+  border-radius: var(--r4);
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(15, 15, 15, 0.06);
+}
+
+.report-category,
+.report-email,
+.report-title {
+  min-width: 0;
+}
+
+.report-attachments {
+  grid-column: 1 / -1;
+  min-width: 0;
+  position: relative;
+}
+
+.report-location-section,
+.report-description,
+.report-transparency,
+.report-error {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.report-location-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-location-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.report-description textarea {
+  min-height: 132px;
+}
+
+.report-submit {
+  grid-column: 1 / -1;
+  justify-self: end;
+  width: min(100%, 240px) !important;
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
 
@@ -223,5 +284,247 @@ body {
   /* Expand search dropdown on desktop */
   .search-input {
     width: 320px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .report-form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding: 18px;
+    border-radius: var(--r3);
+    box-shadow: 0 4px 16px rgba(15, 15, 15, 0.05);
+  }
+
+  .report-location-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .report-submit {
+    justify-self: stretch;
+    width: 100% !important;
+  }
+}
+
+.home-location-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.home-location-stat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--t3);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.home-location-stat svg {
+  flex-shrink: 0;
+}
+
+.home-location-stat strong {
+  color: var(--t1);
+  font-size: 16px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.reports-overview-stats {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.reports-overview-stat {
+  min-width: 0;
+  padding: 7px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border);
+}
+
+.reports-overview-stat:last-of-type {
+  border-right: none;
+}
+
+.reports-overview-stat span:first-child {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.reports-overview-stat span:last-child {
+  margin-top: 3px;
+  color: var(--t3);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.reports-overview-stats-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 4px 8px 8px;
+  color: var(--t3);
+  font-size: 11px;
+  text-align: center;
+}
+
+.districts-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.districts-overview-stat {
+  min-width: 0;
+  padding: 8px 4px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.districts-overview-stat:last-child {
+  border-right: none;
+}
+
+.districts-overview-stat strong {
+  color: var(--t1);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.districts-overview-stat span {
+  color: var(--t3);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.districts-hero-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.districts-hero-picker {
+  max-width: 720px;
+  margin-top: 24px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(8px);
+}
+
+.districts-hero-picker-label {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+@media (max-width: 899px) {
+  .home-location-stats-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 4px;
+    padding: 9px 12px;
+  }
+
+  .home-location-stat {
+    gap: 5px;
+    font-size: 10px;
+  }
+
+  .home-location-stat strong {
+    font-size: 14px;
+  }
+
+  .districts-overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .districts-overview-stat {
+    padding: 7px 4px;
+    gap: 5px;
+  }
+
+  .districts-overview-stat strong {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .districts-hero-intro {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .districts-hero-flag {
+    flex-basis: 68px !important;
+    width: 68px;
+    height: 68px !important;
+  }
+
+  .districts-hero-picker {
+    margin-top: 18px;
+    padding: 13px;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-topbar {
+    gap: 6px !important;
+    padding-right: 10px !important;
+    padding-left: 10px !important;
+  }
+
+  .app-brand-logo {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .app-brand-name span:first-child {
+    font-size: 13px !important;
+  }
+
+  .app-brand-name span:last-child {
+    font-size: 8px !important;
+    letter-spacing: 2px !important;
+  }
+
+}
+
+@media (max-width: 420px) {
+  .home-location-stat svg {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .app-bottom-admin-button {
+    gap: 0 !important;
+  }
+
+  .app-bottom-admin-button > span,
+  .app-bottom-admin-button > svg:last-child {
+    display: none;
   }
 }

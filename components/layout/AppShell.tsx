@@ -1,227 +1,270 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import Image from 'next/image';
-import { Home, Users, Music2, Play, BookOpen, Mic2, Search } from 'lucide-react';
+import {
+  Home, MapPin, BarChart2, Bell, BookOpen, AlertCircle,
+  Search, X, ShieldCheck, DatabaseZap, ChevronDown, FileText,
+} from 'lucide-react';
 
 import HomeSection from '@/components/sections/HomeSection';
-import ArtistsSection from '@/components/sections/ArtistsSection';
-import MusicSection from '@/components/sections/MusicSection';
-import VideosSection from '@/components/sections/VideosSection';
+import ReportsSection from '@/components/sections/ReportsSection';
+import DistrictsSection from '@/components/sections/DistrictsSection';
+import UpdatesSection from '@/components/sections/UpdatesSection';
 import StoriesSection from '@/components/sections/StoriesSection';
-import JoinSection from '@/components/sections/JoinSection';
+import SubmitSection from '@/components/sections/SubmitSection';
+import SyncSection from '@/components/admin/SyncSection';
+import AdminReportsSection from '@/components/admin/ReportsSection';
 
-/* ── Nav config — hash is what appears in the URL ── */
+// ─── Bottom nav (public sections only) ───────────────────────────────────────
 const NAV = [
-  { id: 'home', label: 'Discover', Icon: Home, hash: '' },
-  { id: 'artists', label: 'Artists', Icon: Users, hash: 'artists' },
-  { id: 'music', label: 'Music', Icon: Music2, hash: 'music' },
-  { id: 'videos', label: 'Videos', Icon: Play, hash: 'videos' },
+  { id: 'home', label: 'Home', Icon: Home, hash: '' },
+  { id: 'reports', label: 'Reports', Icon: BarChart2, hash: 'reports' },
+  { id: 'districts', label: 'Districts', Icon: MapPin, hash: 'districts' },
+  { id: 'updates', label: 'Updates', Icon: Bell, hash: 'updates' },
   { id: 'stories', label: 'Stories', Icon: BookOpen, hash: 'stories' },
-  { id: 'join', label: 'Join', Icon: Mic2, hash: 'join' },
+  { id: 'submit', label: 'Report', Icon: AlertCircle, hash: 'report' },
 ] as const;
 
-type SectionId = (typeof NAV)[number]['id'];
+// ─── Admin dropdown items ─────────────────────────────────────────────────────
+const ADMIN_ITEMS = [
+  { id: 'admin-reports', label: 'Reports', Icon: FileText, hash: 'admin-reports' },
+  { id: 'sync', label: 'Locations Sync', Icon: DatabaseZap, hash: 'sync' },
+] as const;
+
+type PublicSectionId = (typeof NAV)[number]['id'];
+type AdminSectionId = (typeof ADMIN_ITEMS)[number]['id'];
+type SectionId = PublicSectionId | AdminSectionId;
+
+const ALL_HASHES = [
+  ...NAV.map((n) => ({ id: n.id as SectionId, hash: n.hash })),
+  ...ADMIN_ITEMS.map((a) => ({ id: a.id as SectionId, hash: a.hash })),
+];
 
 function hashToSection(hash: string): SectionId {
   const clean = hash.replace('#', '');
-  return (NAV.find((n) => n.hash === clean)?.id ?? 'home') as SectionId;
+  return (ALL_HASHES.find((n) => n.hash === clean)?.id ?? 'home') as SectionId;
+}
+
+function isAdminSection(id: SectionId): id is AdminSectionId {
+  return ADMIN_ITEMS.some((a) => a.id === id);
+}
+
+function subscribeToLocationHash(onChange: () => void) {
+  window.addEventListener('hashchange', onChange);
+  return () => window.removeEventListener('hashchange', onChange);
+}
+
+function getLocationHash() {
+  return window.location.hash;
+}
+
+function getServerLocationHash() {
+  return '';
 }
 
 export default function AppShell() {
-  const [active, setActive] = useState<SectionId>('home');
+  const active = hashToSection(useSyncExternalStore(
+    subscribeToLocationHash,
+    getLocationHash,
+    getServerLocationHash,
+  ));
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const searchRef = React.useRef<HTMLDivElement>(null);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  /* Close search when clicking outside */
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setSearchOpen(false);
-      }
-    }
-    if (searchOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [searchOpen]);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const adminRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
 
-  /* On first load, read the hash so a shared/bookmarked URL works */
+  // Close overlays on outside click
   useEffect(() => {
-    setActive(hashToSection(window.location.hash));
+    function handleOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
+      if (adminRef.current && !adminRef.current.contains(e.target as Node)) setAdminOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
-  /* Keep in sync when the user hits back / forward in the browser */
+  // ── UI-only: shadow under header when the inner scroll is past 4px ──
   useEffect(() => {
-    const fn = () => setActive(hashToSection(window.location.hash));
-    window.addEventListener('hashchange', fn);
-    return () => window.removeEventListener('hashchange', fn);
+    const el = mainRef.current?.firstElementChild as HTMLElement | null;
+    if (!el) return;
+    const onScroll = () => setScrolled(el.scrollTop > 4);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* Navigate: update URL hash + active state */
   function navigate(id: SectionId) {
-    const nav = NAV.find((n) => n.id === id)!;
-    window.location.hash = nav.hash;   /* updates URL → e.g. /#artists */
-    setActive(id);
+    const found = ALL_HASHES.find((n) => n.id === id);
+    const hash = found?.hash ?? '';
+    if (window.location.hash !== `#${hash}`) window.location.hash = hash;
+    setAdminOpen(false);
   }
 
   function renderSection() {
     switch (active) {
-      case 'home': return <HomeSection onNav={navigate} />;
-      case 'artists': return <ArtistsSection />;
-      case 'music': return <MusicSection />;
-      case 'videos': return <VideosSection />;
+      case 'home': return <HomeSection onNav={(id) => navigate(id as SectionId)} />;
+      case 'reports': return <ReportsSection />;
+      case 'districts': return <DistrictsSection />;
+      case 'updates': return <UpdatesSection />;
       case 'stories': return <StoriesSection />;
-      case 'join': return <JoinSection />;
+      case 'submit': return <SubmitSection />;
+      // ── admin sections ──
+      case 'sync': return <SyncSection />;
+      case 'admin-reports': return <AdminReportsSection />;
     }
   }
+
+  const adminActive = isAdminSection(active);
 
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100dvh',
-        overflow: 'hidden',
+        display: 'flex', flexDirection: 'column',
+        height: '100dvh', overflow: 'hidden',
         background: 'var(--bg)',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
+
       {/* ══ TOP BAR ══ */}
-      <header
-        style={{
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          height: 'var(--topbar)',
-          padding: '0 16px',
-          background: 'var(--bg)',
-          zIndex: 40,
-        }}
-      >
+      <header className="app-topbar" style={{
+        flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8,
+        height: 'var(--topbar)', padding: '0 14px',
+        background: 'var(--bg)',
+        borderBottom: '1px solid var(--border)',
+        boxShadow: scrolled ? '0 1px 0 rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.05)' : 'none',
+        transition: 'box-shadow 200ms ease',
+        zIndex: 40,
+      }}>
+
         {/* Logo */}
         <button
+          className="app-brand"
           onClick={() => navigate('home')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0,
-          }}
-          aria-label="Home"
+          style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0, height: 'var(--topbar)' }}
+          aria-label="VoiceUG Home"
         >
-          <div style={{ position: 'relative', width: 30, height: 30, flexShrink: 0 }}>
-            <Image src="/FOMO VIBEZ  Logo.png" alt="atbriz" fill sizes="30px" className="object-contain" priority />
+          <div className="app-brand-logo" style={{ position: 'relative', height: 44, width: 44, flexShrink: 0 }}>
+            <Image
+              src="/voice uganda logo.png"
+              alt="VoiceUG"
+              fill
+              sizes="44px"
+              className="object-contain"
+              priority
+            />
           </div>
-          <span style={{ fontWeight: 900, fontSize: 13, letterSpacing: '2.2px', color: 'var(--t1)', whiteSpace: 'nowrap' }}>
-            atbriz
-          </span>
+          <div className="app-brand-name" style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, marginLeft: 6 }}>
+            <span style={{ fontWeight: 900, fontSize: 15, letterSpacing: '0.3px', color: 'var(--t1)' }}>Voice</span>
+            <span style={{ fontWeight: 800, fontSize: 9, letterSpacing: '3px', color: 'var(--crimson)', textTransform: 'uppercase', marginTop: 1 }}>Uganda</span>
+          </div>
         </button>
 
-        {/* Spacer to push search and join to the right */}
-        <div style={{ flex: 1 }} />
+        <div style={{ flex: searchOpen ? 0 : 1 }} />
 
-        {/* Search icon button - expands when clicked */}
-        <div ref={searchRef} className="search-container" style={{ position: 'relative', marginRight: 14 }}>
+        {/* Search */}
+        <div
+          ref={searchRef}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: searchOpen ? 6 : 0,
+            flex: searchOpen ? 1 : '0 0 36px',
+            minWidth: 36,
+            maxWidth: searchOpen ? 420 : undefined,
+            marginLeft: searchOpen ? 'auto' : 0,
+            transition: 'flex 180ms ease',
+          }}
+        >
+          {searchOpen && (
+            <input
+              type="search"
+              placeholder="Search districts, complaints…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoFocus
+              style={{
+                flex: 1,
+                minWidth: 0,
+                width: '100%',
+                padding: '10px 12px',
+                background: 'var(--surface)',
+                color: 'var(--t1)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r2)',
+                fontSize: 13.5,
+                outline: 'none',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+              }}
+            />
+          )}
           <button
             onClick={() => setSearchOpen(!searchOpen)}
+            aria-label={searchOpen ? 'Close search' : 'Open search'}
+            type="button"
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 'var(--r2)',
-              border: 'none',
-              background: 'var(--surface)',
+              width: 36, height: 36, flex: '0 0 36px', borderRadius: 'var(--r2)',
+              border: '1px solid var(--border)',
+              background: searchOpen ? 'var(--surface-2)' : 'var(--surface)',
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background 180ms',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'var(--surface)';
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 180ms, border-color 180ms',
             }}
           >
-            <Search size={16} style={{ color: 'var(--t2)' }} />
+            {searchOpen ? <X size={15} color="var(--t2)" /> : <Search size={15} color="var(--t2)" />}
           </button>
-
-          {/* Expandable search input */}
-          {searchOpen && (
-            <div
-              className="search-dropdown"
-              style={{
-                position: 'absolute',
-                top: 44,
-                right: 0,
-                zIndex: 50,
-              }}
-            >
-              <input
-                className="search-input"
-                type="search"
-                placeholder="Search artists, songs, genres…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                autoFocus
-                style={{
-                  width: '280px',
-                  paddingLeft: 12,
-                  paddingRight: 12,
-                  paddingTop: 10,
-                  paddingBottom: 10,
-                  background: '#FFFFFF',
-                  color: 'var(--t1)',
-                  border: 'none',
-                  borderRadius: 'var(--r2)',
-                  fontSize: 13,
-                  outline: 'none',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-                }}
-              />
-            </div>
-          )}
         </div>
 
-        {/* Page indicator - shows current section (hidden on desktop) */}
-        <div className="page-indicator" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--gold)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-            {NAV.find((n) => n.id === active)?.label || 'Discover'}
-          </span>
-        </div>
-
-        {/* Join button */}
+        {/* Report CTA */}
         <button
-          onClick={() => navigate('join')}
-          className="btn btn-terracotta btn-sm"
-          style={{ flexShrink: 0 }}
+          className="app-report-button"
+          onClick={() => navigate('submit')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            height: 36, padding: '0 14px',
+            background: 'var(--crimson)', color: '#fff',
+            border: 'none', borderRadius: 'var(--rf)',
+            fontSize: 12, fontWeight: 700,
+            cursor: 'pointer', flexShrink: 0,
+            boxShadow: '0 1px 2px rgba(184,72,74,0.25)',
+            transition: 'transform 120ms ease, box-shadow 180ms ease',
+          }}
+          onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.97)')}
+          onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
         >
-          <Mic2 size={12} />
-          Join
+          <AlertCircle size={13} />
+          <span>Report</span>
         </button>
       </header>
 
-      {/* ══ MAIN CONTENT ══ */}
-      <main id="main-content" style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-        <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+      {/* ══ MAIN ══ */}
+      <main style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+        <div
+          ref={mainRef}
+          style={{
+            width: '100%', height: '100%',
+            overflow: 'hidden',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           {renderSection()}
         </div>
       </main>
 
       {/* ══ BOTTOM NAV ══ */}
-      <nav
-        className="bottom-nav"
-        aria-label="Main navigation"
-        style={{
-          flexShrink: 0,
-          display: 'flex',
-          width: '100%',
-          height: 'var(--nav-h)',
-          background: 'var(--bg)',
-          zIndex: 40,
-        }}
-      >
-        {NAV.map(({ id, label, Icon }) => {
+      <nav aria-label="Main navigation" style={{
+        flexShrink: 0, display: 'flex', width: '100%', height: 42,
+        background: 'var(--bg)',
+        borderTop: '1px solid var(--border)',
+        zIndex: 40,
+      }}>
+        {NAV.slice(0, 3).map(({ id, label }) => {
           const on = active === id;
           return (
             <button
@@ -229,41 +272,125 @@ export default function AppShell() {
               onClick={() => navigate(id)}
               aria-current={on ? 'page' : undefined}
               style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4,
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                color: on ? 'var(--gold)' : 'var(--t3)',
-                padding: '6px 4px',
-                transition: 'color 180ms',
-                position: 'relative',
+                flex: 1, display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                border: 'none', background: 'transparent', cursor: 'pointer',
+                color: on ? 'var(--crimson)' : 'var(--t3)',
+                padding: '4px 2px', transition: 'color 150ms',
+                fontSize: 11, fontWeight: on ? 800 : 600,
               }}
             >
-              {on && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 0, left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 28, height: 2,
-                    borderRadius: '0 0 2px 2px',
-                    background: 'var(--gold)',
-                  }}
-                />
-              )}
-              <Icon size={20} />
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.4px', lineHeight: 1 }}>
-                {label.toUpperCase()}
-              </span>
+              {label}
+            </button>
+          );
+        })}
+        <div ref={adminRef} style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+          <button
+            type="button"
+            className="app-bottom-admin-button"
+            onClick={() => setAdminOpen((open) => !open)}
+            aria-label="Admin menu"
+            aria-haspopup="menu"
+            aria-expanded={adminOpen}
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              border: 0,
+              background: 'transparent',
+              cursor: 'pointer',
+              color: adminActive || adminOpen ? 'var(--crimson)' : 'var(--t3)',
+              fontSize: 11,
+              fontWeight: adminActive || adminOpen ? 800 : 600,
+              padding: '4px 2px',
+            }}
+          >
+            <ShieldCheck size={14} />
+            <span>Admin</span>
+            <ChevronDown size={10} style={{ transform: adminOpen ? 'rotate(180deg)' : undefined }} />
+          </button>
+          {adminOpen && (
+            <div
+              role="menu"
+              style={{
+                position: 'absolute',
+                bottom: 'calc(100% + 8px)',
+                left: '50%',
+                zIndex: 50,
+                width: 190,
+                transform: 'translateX(-50%)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r2)',
+                boxShadow: '0 10px 28px rgba(0,0,0,0.10)',
+                overflow: 'hidden',
+              }}
+            >
+              <p style={{
+                fontSize: 10, fontWeight: 800, color: 'var(--t3)',
+                letterSpacing: '1.5px', textTransform: 'uppercase',
+                padding: '10px 14px 6px',
+              }}>
+                Admin
+              </p>
+              {ADMIN_ITEMS.map(({ id, label, Icon }) => {
+                const on = active === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => navigate(id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      width: '100%', padding: '10px 14px',
+                      background: on ? 'rgba(184,72,74,0.06)' : 'transparent',
+                      border: 'none', cursor: 'pointer', textAlign: 'left',
+                      borderLeft: on ? '3px solid var(--crimson)' : '3px solid transparent',
+                      transition: 'background 150ms',
+                    }}
+                    onMouseEnter={(event) => { if (!on) event.currentTarget.style.background = 'var(--surface-2)'; }}
+                    onMouseLeave={(event) => { if (!on) event.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Icon size={14} style={{ color: on ? 'var(--crimson)' : 'var(--t3)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: on ? 'var(--crimson)' : 'var(--t1)' }}>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        {NAV.slice(3).map(({ id, label }) => {
+          const on = active === id;
+          return (
+            <button
+              key={id}
+              onClick={() => navigate(id)}
+              aria-current={on ? 'page' : undefined}
+              style={{
+                flex: 1, display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                border: 'none', background: 'transparent', cursor: 'pointer',
+                color: on ? 'var(--crimson)' : 'var(--t3)',
+                padding: '4px 2px', transition: 'color 150ms',
+                fontSize: 11, fontWeight: on ? 800 : 600,
+              }}
+            >
+              {label}
             </button>
           );
         })}
       </nav>
+
+      <style>{`
+        @keyframes fadeDown {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
